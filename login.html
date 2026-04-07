@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quantity Measurement | Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body class="auth-page">
+    <main class="auth-layout">
+      <section class="brand-panel">
+        <div class="orb orb-a"></div>
+        <div class="orb orb-b"></div>
+        <h1>Measure Smarter</h1>
+        <p>
+          Quick examples before you sign in. This is what your calculator can do
+          instantly.
+        </p>
+        <div class="conversion-showcase" aria-label="Sample conversions">
+          <article class="conversion-card">
+            <p class="conversion-category">Length</p>
+            <p class="conversion-line">1 Yard = 36 Inches</p>
+          </article>
+          <article class="conversion-card">
+            <p class="conversion-category">Weight</p>
+            <p class="conversion-line">1 Kilogram = 1000 Gram</p>
+          </article>
+          <article class="conversion-card">
+            <p class="conversion-category">Volume</p>
+            <p class="conversion-line">1 Litre = 1000 Millilitre</p>
+          </article>
+          <article class="conversion-card">
+            <p class="conversion-category">Temperature</p>
+            <p class="conversion-line">32 Fahrenheit = 0 Celsius</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="card auth-card">
+        <h2>Login</h2>
+        <p class="subtext">Sign in to access your operation history.</p>
+
+        <form id="loginForm" novalidate>
+          <label for="email">
+            <span>Email Address</span>
+            <span class="label-hint">We'll never share your email</span>
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="your.email@example.com"
+            required
+          />
+
+          <label for="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Enter your password"
+            required
+          />
+
+          <button type="submit" class="btn primary">Sign In</button>
+        </form>
+
+        <div class="auth-divider" aria-hidden="true">
+          <span>or</span>
+        </div>
+
+        <div id="googleLoginWrap" class="google-login-wrap hidden">
+          <p class="subtext">Continue with Google</p>
+          <div id="googleSignInButton"></div>
+        </div>
+        <p
+          id="googleLoginUnavailable"
+          class="google-login-note hidden"
+          aria-live="polite"
+        ></p>
+
+        <p id="authMessage" class="message" aria-live="polite"></p>
+
+        <p class="switch-link">
+          New user? <a href="signup.html">Create account</a>
+        </p>
+        <p class="switch-link">
+          Need the overview first? <a href="index.html">Go to welcome page</a>
+        </p>
+      </section>
+    </main>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" src="assets/js/auth.js"></script>
+  </body>
+</html>
