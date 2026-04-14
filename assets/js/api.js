@@ -224,6 +224,71 @@ function canonicalQuantity(category, value, unit) {
   };
 }
 
+function extractErrorMessage(payload, fallbackMessage) {
+  if (!payload || typeof payload !== "object") {
+    return fallbackMessage;
+  }
+
+  if (typeof payload.userMessage === "string" && payload.userMessage.trim()) {
+    return payload.userMessage;
+  }
+
+  if (typeof payload.UserMessage === "string" && payload.UserMessage.trim()) {
+    return payload.UserMessage;
+  }
+
+  if (typeof payload.message === "string" && payload.message.trim()) {
+    return payload.message;
+  }
+
+  if (typeof payload.Message === "string" && payload.Message.trim()) {
+    return payload.Message;
+  }
+
+  if (typeof payload.error === "string" && payload.error.trim()) {
+    return payload.error;
+  }
+
+  if (typeof payload.Error === "string" && payload.Error.trim()) {
+    return payload.Error;
+  }
+
+  if (typeof payload.title === "string" && payload.title.trim()) {
+    return payload.title;
+  }
+
+  if (typeof payload.Title === "string" && payload.Title.trim()) {
+    return payload.Title;
+  }
+
+  if (typeof payload.detail === "string" && payload.detail.trim()) {
+    return payload.detail;
+  }
+
+  if (typeof payload.Detail === "string" && payload.Detail.trim()) {
+    return payload.Detail;
+  }
+
+  if (Array.isArray(payload.errors)) {
+    const firstArrayMessage = payload.errors.find((value) => typeof value === "string" && value.trim());
+    if (firstArrayMessage) {
+      return firstArrayMessage;
+    }
+  }
+
+  if (payload.errors && typeof payload.errors === "object") {
+    const firstErrorList = Object.values(payload.errors).find(
+      (value) => Array.isArray(value) && value.length > 0 && typeof value[0] === "string"
+    );
+
+    if (firstErrorList && typeof firstErrorList[0] === "string") {
+      return firstErrorList[0];
+    }
+  }
+
+  return fallbackMessage;
+}
+
 function convertQuantityLocal(source, targetUnit) {
   const sourceCategory = source?.category;
   const sourceUnit = source?.unit;
@@ -302,7 +367,7 @@ async function request(path, { method = "GET", body = null, requiresAuth = false
 
         try {
           const payload = JSON.parse(payloadText);
-          message = payload.userMessage || payload.message || payload.error || payload.title || message;
+          message = extractErrorMessage(payload, message);
         } catch {
           // Keep plain text fallback.
         }

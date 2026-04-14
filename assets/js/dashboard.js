@@ -57,6 +57,33 @@ function setMessage(text, kind = "") {
   }
 }
 
+function extractReadableErrorMessage(error) {
+  const fallback = String(error?.message || "Operation failed. Please check your inputs.");
+
+  try {
+    const parsed = JSON.parse(fallback);
+    if (parsed && typeof parsed === "object") {
+      return (
+        parsed.userMessage ||
+        parsed.UserMessage ||
+        parsed.message ||
+        parsed.Message ||
+        parsed.error ||
+        parsed.Error ||
+        parsed.title ||
+        parsed.Title ||
+        parsed.detail ||
+        parsed.Detail ||
+        fallback
+      );
+    }
+  } catch {
+    // Ignore non-JSON fallback text.
+  }
+
+  return fallback;
+}
+
 function formatUnit(unit) {
   return String(unit || "").trim().toLowerCase();
 }
@@ -574,7 +601,7 @@ async function runOperation() {
       return;
     }
 
-    setMessage(error.message || "Operation failed. Please check your inputs.", "error");
+    setMessage(extractReadableErrorMessage(error), "error");
   } finally {
     runBtn.disabled = false;
     runBtn.textContent = "Run Operation";
