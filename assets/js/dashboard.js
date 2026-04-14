@@ -57,6 +57,86 @@ function setMessage(text, kind = "") {
   }
 }
 
+function formatUnit(unit) {
+  return String(unit || "").trim().toLowerCase();
+}
+
+function formatQuantity(quantity) {
+  if (!quantity) {
+    return "";
+  }
+
+  const value = quantity.value ?? quantity.Value;
+  const unit = quantity.unit ?? quantity.Unit;
+  if (value === undefined || value === null || value === "") {
+    return formatUnit(unit);
+  }
+
+  return `${value} ${formatUnit(unit)}`.trim();
+}
+
+function getOperationName(operation) {
+  return String(operation || "").trim().toLowerCase();
+}
+
+function getOperationSymbol(operation) {
+  switch (getOperationName(operation)) {
+    case "add":
+      return "+";
+    case "subtract":
+      return "-";
+    case "divide":
+      return "/";
+    default:
+      return "→";
+  }
+}
+
+function getBooleanResult(data) {
+  if (!data || typeof data !== "object") {
+    return undefined;
+  }
+
+  return Object.prototype.hasOwnProperty.call(data, "booleanResult")
+    ? data.booleanResult
+    : data.BooleanResult;
+}
+
+function getSummaryText(operation, data) {
+  const op = getOperationName(operation);
+  const first = data?.first || data?.First || data?.source || data?.Source;
+  const second = data?.second || data?.Second;
+  const resultQuantity = data?.quantityResult || data?.QuantityResult;
+  const scalarResult = data?.scalarResult ?? data?.ScalarResult;
+  const booleanResult = getBooleanResult(data);
+
+  if (op === "convert" && first && resultQuantity) {
+    return `${formatQuantity(first)} ${getOperationSymbol(op)} ${formatQuantity(resultQuantity)}`;
+  }
+
+  if (op === "compare" && first && second && typeof booleanResult === "boolean") {
+    return `${formatQuantity(first)} vs ${formatQuantity(second)} = ${String(booleanResult)}`;
+  }
+
+  if ((op === "add" || op === "subtract") && first && second && resultQuantity) {
+    return `${formatQuantity(first)} ${getOperationSymbol(op)} ${formatQuantity(second)} = ${formatQuantity(resultQuantity)}`;
+  }
+
+  if (op === "divide" && first && second && scalarResult !== undefined) {
+    return `${formatQuantity(first)} ${getOperationSymbol(op)} ${formatQuantity(second)} = ${String(scalarResult)}`;
+  }
+
+  if (data && typeof data.message === "string" && data.message.trim()) {
+    return data.message;
+  }
+
+  if (data && typeof data.Message === "string" && data.Message.trim()) {
+    return data.Message;
+  }
+
+  return "Operation completed successfully.";
+}
+
 function setOptions(selectElement, values) {
   selectElement.innerHTML = "";
   values.forEach((value) => {
@@ -94,7 +174,6 @@ function syncOperationAvailability() {
 
 function updateFormByOperation() {
   const operation = operationSelect.value;
-  const isConvert = operation === "convert";
   const needsSecond = operation !== "convert";
   const needsTarget = operation === "convert" || operation === "add" || operation === "subtract";
 
@@ -124,65 +203,13 @@ function buildQuantity(value, unit) {
   };
 }
 
-function getOperationMessage(data, operation) {
-  if (data && typeof data.message === "string" && data.message.trim()) {
-    return data.message;
-  }
-  if (data && typeof data.Message === "string" && data.Message.trim()) {
-    return data.Message;
-  }
-
-  if (operation === "convert") {
-    const source = data?.source || data?.Source || data?.First;
-    const result = data?.quantityResult || data?.QuantityResult;
-    if (source && result) {
-      return `Conversion completed: ${source.value} ${source.unit} -> ${result.value} ${result.unit}.`;
-    }
-  }
-
-  if (operation === "compare") {
-    const result = Object.prototype.hasOwnProperty.call(data || {}, "booleanResult")
-      ? data.booleanResult
-      : data?.BooleanResult;
-    if (typeof result === "boolean") {
-      return result
-        ? "Comparison completed. The two quantities are equal."
-        : "Comparison completed. The two quantities are not equal.";
-    }
-  }
-
-  if (operation === "add") {
-    const result = data?.quantityResult || data?.QuantityResult;
-    if (result) {
-      return `Addition completed: ${result.value} ${result.unit}.`;
-    }
-  }
-
-  if (operation === "subtract") {
-    const result = data?.quantityResult || data?.QuantityResult;
-    if (result) {
-      return `Subtraction completed: ${result.value} ${result.unit}.`;
-    }
-  }
-
-  if (operation === "divide") {
-    const quotient = data?.scalarResult || data?.ScalarResult;
-    if (quotient !== undefined) {
-      return `Division completed. Quotient: ${quotient}.`;
-    }
-  }
-
-  return "Operation completed successfully.";
-}
-
-/* Enhanced result rendering functions */
 function createResultDisplay(operation, data) {
   const resultContent = document.createElement("div");
   resultContent.className = "result-content";
 
   const summary = document.createElement("p");
   summary.className = "result-summary";
-  summary.textContent = getOperationMessage(data, operation);
+  summary.textContent = getSummaryText(operation, data);
   resultContent.appendChild(summary);
 
   const details = document.createElement("div");
@@ -199,7 +226,8 @@ function createResultDisplay(operation, data) {
     details.appendChild(row);
   };
 
-  addDetail("Operation", operation.toUpperCase());
+  const op = getOperationName(operation);
+  addDetail("Operation", op.toUpperCase());
   addDetail("Category", data?.first?.category || data?.First?.category || data?.First?.Category || categorySelect.value);
 
   const source = data?.source || data?.Source || data?.First;
@@ -207,24 +235,22 @@ function createResultDisplay(operation, data) {
   const second = data?.second || data?.Second;
   const quantityResult = data?.quantityResult || data?.QuantityResult;
   const scalarResult = data?.scalarResult ?? data?.ScalarResult;
-  const booleanResult = Object.prototype.hasOwnProperty.call(data || {}, "booleanResult")
-    ? data.booleanResult
-    : data?.BooleanResult;
+  const booleanResult = getBooleanResult(data);
 
   if (first) {
-    addDetail("First", `${first.value} ${first.unit}`);
+    addDetail("Input", formatQuantity(first));
   }
   if (second) {
-    addDetail("Second", `${second.value} ${second.unit}`);
+    addDetail("Second", formatQuantity(second));
   }
   if (quantityResult) {
-    addDetail("Result", `${quantityResult.value} ${quantityResult.unit}`);
+    addDetail("Result", formatQuantity(quantityResult));
   }
   if (scalarResult !== undefined) {
     addDetail("Result", String(scalarResult));
   }
   if (typeof booleanResult === "boolean") {
-    addDetail("Result", booleanResult ? "Equal" : "Not equal");
+    addDetail("Result", String(booleanResult));
   }
 
   resultContent.appendChild(details);
@@ -232,30 +258,226 @@ function createResultDisplay(operation, data) {
   return resultContent;
 }
 
-function getFieldValue(entry, fieldNames) {
-  const keyByLower = Object.keys(entry || {}).reduce((acc, key) => {
-    acc[key.toLowerCase()] = key;
-    return acc;
-  }, {});
+function parseHistoryDescription(entry) {
+  const description = String(entry?.description || entry?.Description || "").trim();
+  if (!description) {
+    return { operation: "unknown", raw: "" };
+  }
 
-  for (const fieldName of fieldNames) {
-    const resolvedKey = keyByLower[fieldName.toLowerCase()];
-    if (resolvedKey && entry[resolvedKey] !== undefined && entry[resolvedKey] !== null && entry[resolvedKey] !== "") {
-      return entry[resolvedKey];
+  const segments = description
+    .split("|")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  const parsed = { raw: description };
+  const plainSegments = [];
+
+  segments.forEach((segment) => {
+    const [key, ...valueParts] = segment.split("=");
+    if (key && valueParts.length > 0) {
+      parsed[key.trim().toUpperCase()] = valueParts.join("=").trim();
+      return;
+    }
+
+    plainSegments.push(segment);
+  });
+
+  const operationHint = parsed.OPERATION || plainSegments[0] || "";
+  parsed.operation = getOperationName(operationHint);
+
+  if (!parsed.operation || parsed.operation === "unknown") {
+    const known = plainSegments
+      .map((segment) => getOperationName(segment))
+      .find((segment) => ["convert", "compare", "add", "subtract", "divide"].includes(segment));
+
+    if (known) {
+      parsed.operation = known;
     }
   }
 
-  return "";
+  return parsed;
 }
 
-function normalizeText(value, fallback = "-") {
-  if (value === null || value === undefined || value === "") {
-    return fallback;
+function parseQuantityToken(token) {
+  if (!token) {
+    return { text: "", category: "" };
   }
-  if (typeof value === "object") {
-    return JSON.stringify(value);
+
+  const fields = token
+    .split(",")
+    .map((pair) => pair.trim())
+    .filter(Boolean)
+    .reduce((accumulator, pair) => {
+      const [key, ...valueParts] = pair.split("=");
+      if (key && valueParts.length > 0) {
+        accumulator[key.trim().toUpperCase()] = valueParts.join("=").trim();
+      }
+      return accumulator;
+    }, {});
+
+  const value = fields.VAL || fields.VALUE || "";
+  const unit = fields.UNIT || "";
+  const category = fields.CAT || fields.CATEGORY || "";
+
+  if (!value && !unit) {
+    return { text: token.trim(), category: String(category).trim() };
   }
-  return String(value);
+
+  return {
+    text: [value, formatUnit(unit)].filter(Boolean).join(" ").trim(),
+    category: String(category).trim(),
+  };
+}
+
+function normalizeHistoryType(parsedEntry, fallbackCategory = "") {
+  const rawType =
+    parsedEntry.TYPE ||
+    parsedEntry.CATEGORY ||
+    parsedEntry.CAT ||
+    fallbackCategory ||
+    "";
+
+  const normalized = String(rawType || "").trim().toLowerCase();
+  if (!normalized) {
+    return "-";
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function formatOperationLabel(operation) {
+  const normalized = getOperationName(operation);
+  if (!normalized) {
+    return "Unknown";
+  }
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function cleanRawHistoryText(raw) {
+  return String(raw || "")
+    .split("|")
+    .map((segment) => segment.trim())
+    .filter((segment) => segment && !segment.toUpperCase().startsWith("USER="))
+    .join(" | ");
+}
+
+function buildHistorySummary(parsedEntry, entry) {
+  switch (parsedEntry.operation) {
+    case "convert": {
+      const inputToken = parseQuantityToken(parsedEntry.SRC || parsedEntry.SOURCE || parsedEntry.FIRST);
+      const resultToken = parseQuantityToken(parsedEntry.RESULT);
+      const type = normalizeHistoryType(parsedEntry, inputToken.category);
+
+      return {
+        type,
+        operation: "Convert",
+        input: inputToken.text || "-",
+        result: resultToken.text || "-",
+      };
+    }
+    case "compare": {
+      const first = parseQuantityToken(parsedEntry.FIRST);
+      const second = parseQuantityToken(parsedEntry.SECOND);
+      const rawResult = String(parsedEntry.RESULT || "").trim().toLowerCase();
+      const normalizedResult = rawResult === "true" || rawResult === "equal" ? "Equal" : "Not Equal";
+
+      return {
+        type: normalizeHistoryType(parsedEntry, first.category || second.category),
+        operation: "Compare",
+        input: [first.text, second.text].filter(Boolean).join(" vs ") || "-",
+        result: normalizedResult,
+      };
+    }
+    case "add":
+    case "subtract": {
+      const first = parseQuantityToken(parsedEntry.FIRST);
+      const second = parseQuantityToken(parsedEntry.SECOND);
+      const result = parseQuantityToken(parsedEntry.RESULT);
+      return {
+        type: normalizeHistoryType(parsedEntry, first.category || second.category),
+        operation: formatOperationLabel(parsedEntry.operation),
+        input:
+          [first.text, second.text]
+            .filter(Boolean)
+            .join(parsedEntry.operation === "add" ? " + " : " - ") || "-",
+        result: result.text || "-",
+      };
+    }
+    case "divide": {
+      const first = parseQuantityToken(parsedEntry.FIRST);
+      const second = parseQuantityToken(parsedEntry.SECOND);
+      const result = parsedEntry.RESULT || "-";
+      return {
+        type: normalizeHistoryType(parsedEntry, first.category || second.category),
+        operation: "Divide",
+        input: [first.text, second.text].filter(Boolean).join(" / ") || "-",
+        result: String(result),
+      };
+    }
+    default: {
+      const fallbackText = cleanRawHistoryText(parsedEntry.raw || "");
+      return {
+        type: normalizeHistoryType(parsedEntry, entry?.category || entry?.Category),
+        operation: formatOperationLabel(parsedEntry.operation),
+        input: fallbackText || "-",
+        result: parsedEntry.ERRORMESSAGE || "-",
+      };
+    }
+  }
+}
+
+function createHistoryItem(entry, index) {
+  const parsed = parseHistoryDescription(entry);
+  const summary = buildHistorySummary(parsed, entry);
+  const isError = Boolean(entry?.isError ?? entry?.IsError);
+  const errorMessage = String(entry?.errorMessage ?? entry?.ErrorMessage ?? "").trim();
+  const wrapper = document.createElement("article");
+  wrapper.className = `history-item${isError ? " error" : ""}`;
+
+  const idRow = document.createElement("p");
+  idRow.className = "history-line";
+
+  const rawId = entry?.historyId ?? entry?.HistoryId ?? entry?.id ?? entry?.Id;
+  const numericId = Number(rawId);
+  const displayId = Number.isFinite(numericId) ? numericId : 1104 + index;
+  idRow.innerHTML = `<span>ID</span><strong>${displayId}</strong>`;
+
+  const typeRow = document.createElement("p");
+  typeRow.className = "history-line";
+  typeRow.innerHTML = `<span>Type</span><strong>${summary.type || "-"}</strong>`;
+
+  const operationRow = document.createElement("p");
+  operationRow.className = "history-line";
+  operationRow.innerHTML = `<span>Operation</span><strong>${summary.operation || "Unknown"}</strong>`;
+
+  const inputRow = document.createElement("p");
+  inputRow.className = "history-line";
+  inputRow.innerHTML = `<span>Input</span><strong>${summary.input}</strong>`;
+
+  const resultRow = document.createElement("p");
+  resultRow.className = "history-line";
+  resultRow.innerHTML = `<span>Result</span><strong>${summary.result}</strong>`;
+
+  const dateRow = document.createElement("p");
+  dateRow.className = "history-line";
+  dateRow.innerHTML = `<span>Date</span><strong>${formatHistoryDate(entry.createdAt || entry.CreatedAt)}</strong>`;
+
+  wrapper.appendChild(idRow);
+  wrapper.appendChild(typeRow);
+  wrapper.appendChild(operationRow);
+  wrapper.appendChild(inputRow);
+  wrapper.appendChild(resultRow);
+  wrapper.appendChild(dateRow);
+
+  if (isError && errorMessage) {
+    const error = document.createElement("p");
+    error.className = "history-error";
+    error.textContent = `Error: ${errorMessage}`;
+    wrapper.appendChild(error);
+  }
+
+  return wrapper;
 }
 
 function formatHistoryDate(rawDate) {
@@ -284,56 +506,6 @@ function formatHistoryDate(rawDate) {
   }).format(date);
 
   return formatted.replace("AM", "am").replace("PM", "pm");
-}
-
-function createHistoryTable(entries) {
-  const table = document.createElement("table");
-  table.className = "history-table";
-
-  const thead = document.createElement("thead");
-  thead.innerHTML = "<tr><th>ID</th><th>Category</th><th>Type</th><th>Input</th><th>Output</th><th>Date</th></tr>";
-  table.appendChild(thead);
-
-  const tbody = document.createElement("tbody");
-
-  function appendCell(row, value) {
-    const cell = document.createElement("td");
-    cell.textContent = value;
-    row.appendChild(cell);
-  }
-
-  entries.forEach((entry, index) => {
-    const id = normalizeText(
-      getFieldValue(entry, ["id", "historyid", "operationid", "recordid"]),
-      String(entries.length - index)
-    );
-    const category = normalizeText(getFieldValue(entry, ["category", "quantitytype", "measurementtype"]));
-    const operation = normalizeText(getFieldValue(entry, ["operationtype", "operation", "type"]), "UNKNOWN").toUpperCase();
-    const input = normalizeText(
-      getFieldValue(entry, ["input", "inputexpression", "expression", "request", "description"])
-    );
-    const output = normalizeText(
-      getFieldValue(entry, ["output", "result", "resulttext", "response"]),
-      entry.isError ? `Error: ${normalizeText(entry.errorMessage)}` : "-"
-    );
-    const createdAt = formatHistoryDate(getFieldValue(entry, ["createdat", "createdatutc", "timestamp", "date"]));
-
-    const row = document.createElement("tr");
-    if (entry.isError) {
-      row.classList.add("is-error");
-    }
-
-    appendCell(row, id);
-    appendCell(row, category);
-    appendCell(row, operation);
-    appendCell(row, input);
-    appendCell(row, output);
-    appendCell(row, createdAt);
-    tbody.appendChild(row);
-  });
-
-  table.appendChild(tbody);
-  return table;
 }
 
 async function runOperation() {
@@ -384,38 +556,29 @@ async function runOperation() {
     resultBox.innerHTML = "";
     resultBox.appendChild(resultDisplay);
 
-    const responseMessage = getOperationMessage(result, operation);
+    const responseMessage = getSummaryText(operation, result);
     setMessage(responseMessage, "success");
-    await loadHistory();
+
+    if (isAuthenticated()) {
+      await loadHistory();
+    }
   } catch (error) {
     resultBox.innerHTML = "";
+
+    if (Number(error?.status) === 401) {
+      if (isAuthenticated()) {
+        setMessage("Your session expired or is invalid. Please login again.", "error");
+      } else {
+        setMessage("Operation request was rejected by backend authorization settings.", "error");
+      }
+      return;
+    }
+
     setMessage(error.message || "Operation failed. Please check your inputs.", "error");
   } finally {
     runBtn.disabled = false;
     runBtn.textContent = "Run Operation";
   }
-}
-
-function createHistoryItem(entry) {
-  const wrapper = document.createElement("article");
-  wrapper.className = `history-item${entry.isError ? " error" : ""}`;
-
-  const timestamp = document.createElement("time");
-  timestamp.textContent = new Date(entry.createdAt).toLocaleString();
-
-  const description = document.createElement("p");
-  description.textContent = entry.description;
-
-  wrapper.appendChild(timestamp);
-  wrapper.appendChild(description);
-
-  if (entry.isError && entry.errorMessage) {
-    const error = document.createElement("p");
-    error.textContent = `Error: ${entry.errorMessage}`;
-    wrapper.appendChild(error);
-  }
-
-  return wrapper;
 }
 
 async function loadHistory() {
@@ -440,7 +603,9 @@ async function loadHistory() {
       return;
     }
 
-    historyList.appendChild(createHistoryTable(entries));
+    entries.forEach((entry, index) => {
+      historyList.appendChild(createHistoryItem(entry, index));
+    });
   } catch (error) {
     historyList.innerHTML = `<p class=\"message error\">${error.message}</p>`;
   }
@@ -450,10 +615,21 @@ async function initializeDashboard() {
   setupAuthUI();
   appConfig = await loadAppConfig();
 
-  setOptions(categorySelect, Object.keys(appConfig.categories));
+  const categories = Object.keys(appConfig.categories || {});
+  setOptions(categorySelect, categories);
+
+  if (categories.length > 0) {
+    categorySelect.selectedIndex = 0;
+  }
+
   updateUnitDropdowns();
   syncOperationAvailability();
   updateFormByOperation();
+
+  if (categories.length > 0) {
+    categorySelect.dispatchEvent(new Event("change"));
+  }
+
   await loadHistory();
 }
 

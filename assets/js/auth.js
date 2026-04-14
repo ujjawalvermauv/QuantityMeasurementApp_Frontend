@@ -90,6 +90,29 @@ function showGoogleUnavailable(text) {
   googleUnavailableNote.classList.remove("hidden");
 }
 
+function hideGoogleUnavailable() {
+  if (!googleUnavailableNote) {
+    return;
+  }
+
+  googleUnavailableNote.textContent = "";
+  googleUnavailableNote.classList.add("hidden");
+}
+
+function renderDisabledGoogleButton() {
+  if (!googleButtonContainer) {
+    return;
+  }
+
+  googleButtonContainer.innerHTML =
+    '<button type="button" class="btn ghost google-disabled-btn" disabled>Sign in with Google</button>';
+}
+
+function getGoogleOriginHelp() {
+  const currentOrigin = window.location.origin || "unknown origin";
+  return `Register ${currentOrigin} in Google Cloud Console under Authorized JavaScript origins. If you opened the app from a file path, serve it from localhost instead.`;
+}
+
 async function initializeGoogleLogin() {
   if (!isLoginPage && !isSignupPage) {
     return;
@@ -103,21 +126,33 @@ async function initializeGoogleLogin() {
   const clientId = String(config.googleClientId || "").trim();
 
   if (!clientId) {
-    if (googleButtonContainer) {
-      googleButtonContainer.innerHTML =
-        '<button type="button" class="btn ghost google-disabled-btn" disabled>Sign in with Google</button>';
-    }
+    renderDisabledGoogleButton();
     showGoogleUnavailable("Google sign-in is not enabled yet. Add googleClientId in app-config.json to enable it.");
     return;
   }
 
   if (!canUseGoogleIdentity()) {
-    if (googleButtonContainer) {
-      googleButtonContainer.innerHTML =
-        '<button type="button" class="btn ghost google-disabled-btn" disabled>Sign in with Google</button>';
-    }
+    renderDisabledGoogleButton();
     showGoogleUnavailable("Google sign-in could not be loaded. Please refresh the page and try again.");
     return;
+  }
+
+  if (!/^https?:\/\//i.test(window.location.origin)) {
+    renderDisabledGoogleButton();
+    showGoogleUnavailable(getGoogleOriginHelp());
+    return;
+  }
+
+  const googleAuthAvailable = await api.isGoogleAuthAvailable();
+  if (googleAuthAvailable === false) {
+    renderDisabledGoogleButton();
+    showGoogleUnavailable("Google sign-in is currently unavailable because backend Google auth route is not enabled.");
+    return;
+  }
+
+  if (googleAuthAvailable === null) {
+    // Do not show a warning for unknown probe state. Users can still login with email/password.
+    hideGoogleUnavailable();
   }
 
   window.google.accounts.id.initialize({
@@ -136,7 +171,18 @@ async function initializeGoogleLogin() {
           window.location.replace("app.html");
         }, 450);
       } catch (error) {
-        setMessage(extractMessage(error), "error");
+        if (Number(error?.status) === 404) {
+          setMessage("Google sign-in endpoint was not found on the backend. Use email/password login or enable the Google auth API route.", "error");
+          return;
+        }
+
+        const readable = extractMessage(error);
+        if (/origin_mismatch|authorization error|access blocked|oauth/i.test(readable)) {
+          setMessage(getGoogleOriginHelp(), "error");
+          return;
+        }
+
+        setMessage(readable, "error");
       }
     },
     auto_select: false,
@@ -183,6 +229,11 @@ if (form) {
         window.location.replace("app.html");
       }, 450);
     } catch (error) {
+      if (Number(error?.status) === 404) {
+        setMessage("Authentication endpoint not found. Verify backend route prefix (/v1 vs /api/v1) and API base URL in app-config.json.", "error");
+        return;
+      }
+
       const readableMessage = extractMessage(error);
       const alreadyExists = /already exists|already registered/i.test(readableMessage);
 
