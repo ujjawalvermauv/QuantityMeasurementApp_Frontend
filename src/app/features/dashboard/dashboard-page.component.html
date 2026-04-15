@@ -1,0 +1,211 @@
+<main class="dashboard-page">
+  <header class="topbar">
+    <div>
+      <p class="kicker">Quantity Measurement</p>
+      <h1>Calculator Dashboard</h1>
+      <p class="subtext">
+        Run conversions and quantity operations without login. Login only for
+        history.
+      </p>
+    </div>
+
+    <div class="topbar-actions">
+      <span class="badge" *ngIf="isAuthenticated">{{ userBadgeText }}</span>
+      <a class="btn ghost" routerLink="/login" *ngIf="!isAuthenticated"
+        >Login</a
+      >
+      <a class="btn primary" routerLink="/signup" *ngIf="!isAuthenticated"
+        >Create Account</a
+      >
+      <button
+        class="btn ghost"
+        type="button"
+        *ngIf="isAuthenticated"
+        (click)="logout()"
+      >
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <section class="dashboard-grid">
+    <article class="card op-card" id="calculations">
+      <h2>Operation</h2>
+
+      <div class="field-grid two">
+        <div>
+          <label for="operationSelect"><span>Operation Type</span></label>
+          <select
+            id="operationSelect"
+            [(ngModel)]="operation"
+            (change)="onOperationChange()"
+          >
+            <option
+              *ngFor="let option of operationOptions"
+              [value]="option.value"
+              [disabled]="option.disabled"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label for="categorySelect"><span>Measurement Category</span></label>
+          <select
+            id="categorySelect"
+            [(ngModel)]="category"
+            (change)="onCategoryChange()"
+          >
+            <option *ngFor="let item of categories" [value]="item">
+              {{ item }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-grid two">
+        <div>
+          <label for="firstValue">
+            <span>First Value</span>
+            <span class="label-hint">Enter a number</span>
+          </label>
+          <input
+            id="firstValue"
+            type="number"
+            step="any"
+            placeholder="e.g. 100"
+            [(ngModel)]="firstValue"
+          />
+        </div>
+
+        <div>
+          <label for="firstUnit"><span>First Unit</span></label>
+          <select id="firstUnit" [(ngModel)]="firstUnit">
+            <option *ngFor="let unit of categoryUnits" [value]="unit">
+              {{ unit }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-grid two" *ngIf="needsSecond">
+        <div>
+          <label for="secondValue">
+            <span>Second Value</span>
+            <span class="label-hint">Enter a number</span>
+          </label>
+          <input
+            id="secondValue"
+            type="number"
+            step="any"
+            placeholder="e.g. 50"
+            [(ngModel)]="secondValue"
+          />
+        </div>
+
+        <div>
+          <label for="secondUnit"><span>Second Unit</span></label>
+          <select id="secondUnit" [(ngModel)]="secondUnit">
+            <option *ngFor="let unit of categoryUnits" [value]="unit">
+              {{ unit }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-grid one" *ngIf="needsTarget">
+        <div>
+          <label for="targetUnit"><span>Target Unit (Convert to)</span></label>
+          <select id="targetUnit" [(ngModel)]="targetUnit">
+            <option *ngFor="let unit of categoryUnits" [value]="unit">
+              {{ unit }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="btn primary"
+        (click)="runOperation()"
+        [disabled]="running"
+      >
+        <ng-container *ngIf="running">
+          <span class="loading-spinner"></span>
+          Running...
+        </ng-container>
+        <ng-container *ngIf="!running">Run Operation</ng-container>
+      </button>
+
+      <p class="message" [ngClass]="messageKind" aria-live="polite">
+        {{ message }}
+      </p>
+
+      <div class="result-panel">
+        <h3>Result</h3>
+        <div class="result-box" [innerHTML]="resultHtml"></div>
+      </div>
+    </article>
+
+    <article class="card history-card" id="history">
+      <div class="history-head">
+        <h2>History</h2>
+        <button class="btn ghost" type="button" (click)="loadHistory()">
+          Refresh
+        </button>
+      </div>
+
+      <p class="subtext">{{ historyHint }}</p>
+
+      <div class="history-list" *ngIf="!isAuthenticated">
+        <p class="subtext">
+          History is private. Please <a routerLink="/login">login</a> or
+          <a routerLink="/signup">create account</a>.
+        </p>
+      </div>
+
+      <p class="message error" *ngIf="historyError">{{ historyError }}</p>
+
+      <div
+        class="history-list"
+        *ngIf="isAuthenticated && !historyError && historyItems.length === 0"
+      >
+        <p class="subtext">No history found yet.</p>
+      </div>
+
+      <div
+        class="history-list"
+        *ngIf="isAuthenticated && historyItems.length > 0"
+      >
+        <article
+          class="history-item"
+          [class.error]="item.isError"
+          *ngFor="let item of historyItems"
+        >
+          <p class="history-line">
+            <span>ID</span><strong>{{ item.id }}</strong>
+          </p>
+          <p class="history-line">
+            <span>Type</span><strong>{{ item.type }}</strong>
+          </p>
+          <p class="history-line">
+            <span>Operation</span><strong>{{ item.operation }}</strong>
+          </p>
+          <p class="history-line">
+            <span>Input</span><strong>{{ item.input }}</strong>
+          </p>
+          <p class="history-line">
+            <span>Result</span><strong>{{ item.result }}</strong>
+          </p>
+          <p class="history-line">
+            <span>Date</span><strong>{{ item.date }}</strong>
+          </p>
+          <p class="history-error" *ngIf="item.isError && item.errorMessage">
+            Error: {{ item.errorMessage }}
+          </p>
+        </article>
+      </div>
+    </article>
+  </section>
+</main>

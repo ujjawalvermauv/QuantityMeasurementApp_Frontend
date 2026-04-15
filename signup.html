@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quantity Measurement | Signup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body class="auth-page">
+    <main class="auth-layout">
+      <section class="brand-panel">
+        <div class="orb orb-a"></div>
+        <div class="orb orb-b"></div>
+        <h1>Create Your Account</h1>
+        <p>
+          Register once and keep your quantity operation history linked to your
+          profile.
+        </p>
+        <ul class="feature-list">
+          <li>Fast signup with email and password</li>
+          <li>Automatic secure session after signup</li>
+          <li>Access to protected operation history</li>
+        </ul>
+      </section>
+
+      <section class="card auth-card">
+        <h2>Signup</h2>
+        <p class="subtext">Create account and start measuring.</p>
+
+        <form id="signupForm" novalidate>
+          <label for="name">
+            <span>Full Name</span>
+            <span class="label-hint">How we'll address you</span>
+          </label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            placeholder="John Smith"
+            required
+          />
+
+          <label for="email">
+            <span>Email Address</span>
+            <span class="label-hint">We'll use this for login</span>
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="your.email@example.com"
+            required
+          />
+
+          <label for="password">
+            <span>Password</span>
+            <span class="label-hint">At least 6 characters</span>
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Enter a strong password"
+            minlength="6"
+            required
+          />
+
+          <button type="submit" class="btn primary">Create Account</button>
+        </form>
+
+        <div class="auth-divider" aria-hidden="true">
+          <span>or</span>
+        </div>
+
+        <div id="googleLoginWrap" class="google-login-wrap hidden">
+          <p class="subtext">Continue with Google</p>
+          <div id="googleSignInButton"></div>
+        </div>
+        <p
+          id="googleLoginUnavailable"
+          class="google-login-note hidden"
+          aria-live="polite"
+        ></p>
+
+        <p id="authMessage" class="message" aria-live="polite"></p>
+
+        <p class="switch-link">
+          Already registered? <a href="login.html">Back to login</a>
+        </p>
+        <p class="switch-link">
+          Need a quick overview? <a href="index.html">Go to welcome page</a>
+        </p>
+      </section>
+    </main>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" src="assets/js/auth.js"></script>
+  </body>
+</html>

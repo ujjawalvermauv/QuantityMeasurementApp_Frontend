@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quantity Measurement | Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body class="dashboard-page">
+    <header class="topbar">
+      <div>
+        <p class="kicker">Quantity Measurement</p>
+        <h1>Calculator Dashboard</h1>
+        <p class="subtext">
+          Run conversions and quantity operations without login. Login only for
+          history.
+        </p>
+      </div>
+      <div class="topbar-actions">
+        <span id="userBadge" class="badge hidden"></span>
+        <a id="loginLink" class="btn ghost" href="login.html">Login</a>
+        <a id="signupLink" class="btn primary" href="signup.html"
+          >Create Account</a
+        >
+        <button id="logoutBtn" class="btn ghost hidden" type="button">
+          Logout
+        </button>
+      </div>
+    </header>
+
+    <main class="dashboard-grid">
+      <section class="card op-card" id="calculations">
+        <h2>Operation</h2>
+
+        <div class="field-grid two">
+          <div>
+            <label for="operationSelect">
+              <span>Operation Type</span>
+            </label>
+            <select id="operationSelect">
+              <option value="convert">Convert Units</option>
+              <option value="compare">Compare Quantities</option>
+              <option value="add">Add Quantities</option>
+              <option value="subtract">Subtract Quantities</option>
+              <option value="divide">Divide Quantities</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="categorySelect">
+              <span>Measurement Category</span>
+            </label>
+            <select id="categorySelect"></select>
+          </div>
+        </div>
+
+        <div class="field-grid two">
+          <div>
+            <label for="firstValue">
+              <span>First Value</span>
+              <span class="label-hint">Enter a number</span>
+            </label>
+            <input
+              id="firstValue"
+              type="number"
+              step="any"
+              placeholder="e.g. 100"
+            />
+          </div>
+          <div>
+            <label for="firstUnit">
+              <span>First Unit</span>
+            </label>
+            <select id="firstUnit"></select>
+          </div>
+        </div>
+
+        <div id="secondGroup" class="field-grid two">
+          <div>
+            <label for="secondValue">
+              <span>Second Value</span>
+              <span class="label-hint">Enter a number</span>
+            </label>
+            <input
+              id="secondValue"
+              type="number"
+              step="any"
+              placeholder="e.g. 50"
+            />
+          </div>
+          <div>
+            <label for="secondUnit">
+              <span>Second Unit</span>
+            </label>
+            <select id="secondUnit"></select>
+          </div>
+        </div>
+
+        <div id="targetGroup" class="field-grid one">
+          <div>
+            <label for="targetUnit">
+              <span>Target Unit (Convert to)</span>
+            </label>
+            <select id="targetUnit"></select>
+          </div>
+        </div>
+
+        <button id="runBtn" type="button" class="btn primary">
+          Run Operation
+        </button>
+        <p id="operationMessage" class="message" aria-live="polite"></p>
+
+        <div class="result-panel">
+          <h3>Result</h3>
+          <div id="resultBox" class="result-box">No operation run yet.</div>
+        </div>
+      </section>
+
+      <section class="card history-card" id="history">
+        <div class="history-head">
+          <h2>History</h2>
+          <button id="refreshHistoryBtn" class="btn ghost" type="button">
+            Refresh
+          </button>
+        </div>
+        <p id="historyHint" class="subtext">
+          Login or signup to view your operation history.
+        </p>
+        <div id="historyList" class="history-list"></div>
+      </section>
+    </main>
+
+    <script type="module" src="assets/js/dashboard.js"></script>
+  </body>
+</html> 
