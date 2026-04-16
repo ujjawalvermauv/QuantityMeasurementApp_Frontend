@@ -143,6 +143,10 @@ export class ApiService {
 
     candidateBases.forEach((baseUrl) => {
       candidatePaths.forEach((candidatePath) => {
+        if (baseUrl.endsWith('/api') && candidatePath.startsWith('/api/')) {
+          return;
+        }
+
         urls.add(`${baseUrl}${candidatePath}`);
       });
     });
