@@ -330,7 +330,17 @@ export class ApiService {
       }
     }
 
-    throw (lastError || new Error('Unable to connect to backend API.')) as Error;
+    const firstCandidateUrl = candidateUrls[0] || 'the configured API URL';
+    const networkMessage = `Unable to reach backend API at ${firstCandidateUrl}. Check API_BASE_URL and make sure the backend service is running.`;
+    const networkError = new Error(networkMessage) as Error & { status?: number; url?: string };
+    networkError.status = 0;
+    networkError.url = firstCandidateUrl;
+
+    if (lastError && this.isNetworkLikeError(lastError)) {
+      throw networkError;
+    }
+
+    throw (lastError || networkError) as Error;
   }
 
   private async endpointExists(path: string, { method = 'GET', body = null }: { method?: string; body?: unknown } = {}) {

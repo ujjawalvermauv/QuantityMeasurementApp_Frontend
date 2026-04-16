@@ -415,6 +415,26 @@ a.btn {
   padding: 0.55rem 0.7rem;
 }
 
+.backend-warning {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 12px;
+  border: 1px solid rgba(187, 86, 25, 0.24);
+  background: linear-gradient(135deg, #fff3e8, #fff8f2);
+  color: #8a4310;
+}
+
+.backend-warning strong {
+  font-size: 0.95rem;
+}
+
+.backend-warning span {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .google-disabled-btn {
   width: 100%;
   margin-top: 0;

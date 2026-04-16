@@ -27,6 +27,8 @@ export class AuthPageComponent implements OnInit {
   message = '';
   messageKind = '';
 
+  backendUnavailableNote = '';
+
   googleVisible = true;
   googleUnavailableNote = '';
 
@@ -119,6 +121,31 @@ export class AuthPageComponent implements OnInit {
       '<button type="button" class="btn ghost google-disabled-btn" disabled>Sign in with Google</button>';
   }
 
+  private isBackendUnavailable(error: unknown): boolean {
+    const status = Number((error as { status?: number })?.status || 0);
+    if (status === 0) {
+      return true;
+    }
+
+    const message = String((error as { message?: string })?.message || '').toLowerCase();
+    return (
+      message.includes('failed to fetch') ||
+      message.includes('net::err_connection_refused') ||
+      message.includes('unable to reach backend api') ||
+      message.includes('service unavailable')
+    );
+  }
+
+  private async getApiBaseUrl(): Promise<string> {
+    const config = await this.configService.loadAppConfig();
+    return String(config.apiBaseUrl || config.fallbackApiBaseUrl || 'the configured API URL').trim();
+  }
+
+  private async setBackendUnavailableNote(note: string): Promise<void> {
+    const apiBaseUrl = await this.getApiBaseUrl();
+    this.backendUnavailableNote = note ? `${note} (${apiBaseUrl})` : '';
+  }
+
   private canUseGoogleIdentity(): boolean {
     return Boolean(window.google && window.google.accounts && window.google.accounts.id);
   }
@@ -131,18 +158,21 @@ export class AuthPageComponent implements OnInit {
     if (!clientId) {
       this.renderDisabledGoogleButton();
       this.googleUnavailableNote = 'Google sign-in is not enabled yet. Add googleClientId in app-config.json to enable it.';
+      await this.setBackendUnavailableNote('Google sign-in is disabled until the backend is connected');
       return;
     }
 
     if (!this.canUseGoogleIdentity()) {
       this.renderDisabledGoogleButton();
       this.googleUnavailableNote = 'Google sign-in could not be loaded. Please refresh the page and try again.';
+      await this.setBackendUnavailableNote('Google identity service could not load');
       return;
     }
 
     if (!/^https?:\/\//i.test(window.location.origin)) {
       this.renderDisabledGoogleButton();
       this.googleUnavailableNote = this.getGoogleOriginHelp();
+      await this.setBackendUnavailableNote('Google sign-in requires a valid web origin');
       return;
     }
 
@@ -151,12 +181,18 @@ export class AuthPageComponent implements OnInit {
       this.renderDisabledGoogleButton();
       this.googleUnavailableNote =
         'Google sign-in is currently unavailable because backend Google auth route is not enabled.';
+      await this.setBackendUnavailableNote('Backend is reachable, but the Google auth route is not enabled');
       return;
     }
 
     if (googleAuthAvailable === null) {
-      this.googleUnavailableNote = '';
+      this.renderDisabledGoogleButton();
+      this.googleUnavailableNote = `Backend is unreachable at ${config.apiBaseUrl || 'the configured API URL'}. Start the API service or update API_BASE_URL.`;
+      await this.setBackendUnavailableNote('Backend is unreachable');
+      return;
     }
+
+    this.backendUnavailableNote = '';
 
     window.google.accounts.id.initialize({
       client_id: clientId,
@@ -234,6 +270,16 @@ export class AuthPageComponent implements OnInit {
         await this.router.navigateByUrl('/dashboard');
       }, 450);
     } catch (error) {
+      if (this.isBackendUnavailable(error)) {
+        const apiBaseUrl = await this.getApiBaseUrl();
+        this.backendUnavailableNote = `Backend is unreachable at ${apiBaseUrl}. Start the API service or update API_BASE_URL.`;
+        this.setMessage(
+          this.backendUnavailableNote,
+          'error',
+        );
+        return;
+      }
+
       if (Number((error as { status?: number })?.status) === 404) {
         this.setMessage(
           'Authentication endpoint not found. Verify backend route prefix (/v1 vs /api/v1) and API base URL in app-config.json.',

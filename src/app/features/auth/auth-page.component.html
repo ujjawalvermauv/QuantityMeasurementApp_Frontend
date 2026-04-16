@@ -56,6 +56,11 @@
       }}
     </p>
 
+    <div class="backend-warning" *ngIf="backendUnavailableNote">
+      <strong>Backend unavailable</strong>
+      <span>{{ backendUnavailableNote }}</span>
+    </div>
+
     <form (ngSubmit)="submitForm()" novalidate>
       <ng-container *ngIf="mode === 'signup'">
         <label for="name">
