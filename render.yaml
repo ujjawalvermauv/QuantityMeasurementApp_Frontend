@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: quantity-measurement-app-frontend
+    runtime: node
+    buildCommand: npm run build
+    startCommand: npm install -g serve && serve -s dist/quantity-measurement-app -l 3000
+    envVars:
+      - key: API_BASE_URL
+        value: https://quantity-measurement-api.onrender.com/api
+      - key: GOOGLE_CLIENT_ID
+        value: 59780703271-jahb0saln7fme20mjs2jdm7g8omm75qk.apps.googleusercontent.com
