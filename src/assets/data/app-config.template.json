@@ -1,0 +1,29 @@
+{
+    "appName": "Quantity Measurement App",
+    "apiBaseUrl": "",
+    "fallbackApiBaseUrl": "",
+    "googleClientId": "",
+    "categories": {
+        "Length": [
+            "Feet",
+            "Inches",
+            "Yards",
+            "Centimeters"
+        ],
+        "Weight": [
+            "Kilogram",
+            "Gram",
+            "Pound"
+        ],
+        "Volume": [
+            "Litre",
+            "Millilitre",
+            "Gallon"
+        ],
+        "Temperature": [
+            "Celsius",
+            "Fahrenheit",
+            "Kelvin"
+        ]
+    }
+}
